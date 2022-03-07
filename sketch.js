@@ -4,8 +4,10 @@ let spridesheet
 let textures = []
 let tree = []
 let leaves = []
+let leavesCount = []
 let count = 0
 let gravity
+let globalWind
 let zOff = 0
 
 function preload() {
@@ -42,9 +44,13 @@ function setup() {
       tree.push(tree[i].branchA())
       tree.push(tree[i].branchB())
     }
+    if (tree[i].getLen() <= 20) {
+      leaves.push(new Leaf(tree[i].end.x, tree[i].end.y, 60))
+    }
     tree[i].finished = true
   }
-  //navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure)
+  leavesCount = leaves.map((leaf, index) => index)
+  navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure)
 }
 
 function draw() {
@@ -58,18 +64,30 @@ function draw() {
   for (let branch of tree) {
     branch.show()
   }
+  for (let leaf of leaves) {
+    leaf.update()
+    leaf.show()
+  }
   for (let flake of snow) {
     let xOff = flake.pos.x / width
     let yOff = flake.pos.y / height
     let wAngle = noise(xOff, yOff, zOff) * TWO_PI
     let wind = p5.Vector.fromAngle(wAngle)
     wind.mult(0.01)
-
     flake.applyForce(gravity)
     flake.applyForce(wind)
+    globalWind && flake.applyForce(globalWind)
     flake.update()
     flake.show()
   }
+}
+
+function mousePressed() {
+  globalWind = createVector(0.15, 0)
+}
+
+function mouseReleased() {
+  globalWind = null
 }
 
 function onMIDISuccess(midiAccess) {
@@ -85,7 +103,7 @@ function onMIDIFailure() {
 function getMIDIMessage(message) {
   var command = message.data[0]
   var note = message.data[1]
-  var velocity = message.data.length > 2 ? message.data[2] : 0 // a velocity value might not be included with a noteOff command
+  var velocity = message.data.length > 2 ? message.data[2] : 0
 
   switch (command) {
     case 144: // noteOn
@@ -103,10 +121,21 @@ function getMIDIMessage(message) {
 }
 
 function noteOn(note) {
-  let x = random(50, width - 50)
-  let y = random(50, height - 50)
-  console.log('The note is://', x, y, note)
-  notes.push(new Note(x, y, note))
+  if (leavesCount.length > 0) {
+    let randomLeafIndex = random(leavesCount)
+    let currentLeaf = leaves[randomLeafIndex]
+    if(currentLeaf.canShow) {
+      currentLeaf.applyForce(gravity);
+    } else {
+      currentLeaf.canShow = true;
+    }
+    leavesCount = leavesCount.filter((value) => value !== randomLeafIndex)
+    return;
+  }
+  if(leavesCount.length === 0) {
+    leavesCount = leaves.map((leaf, index) => index);
+    return;
+  }
 }
 
 function noteOff(note) {
