@@ -83,7 +83,27 @@ function draw() {
 }
 
 function mousePressed() {
-  globalWind = createVector(0.15, 0)
+  /*  globalWind = createVector(0.15, 0)
+  let randomColor = [random(51, 200), random(0, 150), random(153, 255)]
+  for (let leaf of leaves) {
+    leaf.changeColor(randomColor)
+  }
+  if (leavesCount.length > 0) {
+    let randomLeafIndex = random(leavesCount)
+    let currentLeaf = leaves[randomLeafIndex]
+    if (currentLeaf.canShow) {
+      currentLeaf.isFalling = true
+      currentLeaf.applyForce(gravity)
+    } else {
+      currentLeaf.canShow = true
+    }
+    leavesCount = leavesCount.filter((value) => value !== randomLeafIndex)
+    return
+  }
+  if (leavesCount.length === 0) {
+    leavesCount = leaves.map((leaf, index) => index)
+    return
+  } */
 }
 
 function mouseReleased() {
@@ -116,29 +136,41 @@ function getMIDIMessage(message) {
     case 128: // noteOff
       noteOff(note)
       break
-    // we could easily expand this switch statement to cover other types of commands such as controllers or sysex
   }
 }
 
 function noteOn(note) {
-  if (leavesCount.length > 0) {
-    let randomLeafIndex = random(leavesCount)
-    let currentLeaf = leaves[randomLeafIndex]
-    if(currentLeaf.canShow) {
-      currentLeaf.applyForce(gravity);
-    } else {
-      currentLeaf.canShow = true;
+  if (note <= 60) {
+    if (leavesCount.length > 0) {
+      let randomLeafIndex = random(leavesCount)
+      let currentLeaf = leaves[randomLeafIndex]
+      if (currentLeaf.canShow) {
+        currentLeaf.isFalling = true
+        currentLeaf.applyForce(gravity)
+      } else {
+        currentLeaf.canShow = true
+      }
+      leavesCount = leavesCount.filter((value) => value !== randomLeafIndex)
+      return
     }
-    leavesCount = leavesCount.filter((value) => value !== randomLeafIndex)
-    return;
-  }
-  if(leavesCount.length === 0) {
-    leavesCount = leaves.map((leaf, index) => index);
-    return;
+    if (leavesCount.length === 0) {
+      leavesCount = leaves.map((leaf, index) => index)
+      return
+    }
+  } else {
+    globalWind = createVector(0.15 * random([-1, 1]), 0)
+    let randomColor = [random(51, 200), random(0, 150), random(153, 255)]
+    for (let leaf of leaves) {
+      leaf.changeColor(randomColor)
+    }
   }
 }
 
 function noteOff(note) {
+  if (note > 60) {
+    globalWind = null
+  }
+
   for (let i = notes.length - 1; i >= 0; i--) {
     notes.splice(i, 1)
   }
